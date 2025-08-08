@@ -1,0 +1,70 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <!--     Tieu de stopwatch -->
+    <TextView
+        android:id="@+id/tv_stopwatch_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Bấm giờ"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <!--     Thoi gian chay -->
+    <TextView
+        android:id="@+id/tv_stopwatch_time"
+        android:layout_width="303dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="92dp"
+        android:text="00:00:00.000"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_stopwatch_title"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_lap_times"
+        android:layout_width="350dp"
+        android:layout_height="380dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_stopwatch_time"/>
+    <!--     Nut Start/Pause -->
+    <!--     Reset/Lap -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_start_pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rv_lap_times"
+        android:layout_marginStart="112dp"
+        android:layout_marginTop="16dp"
+        android:contentDescription="Start Stopwatch"
+        app:backgroundTint="#FFFFFF"
+        app:elevation="6dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rv_lap_times"
+        app:rippleColor="#CCCCCC"
+        app:srcCompat="@drawable/ic_start"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_reset_lap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="112dp"
+        android:contentDescription="Reset Stopwatch"
+        app:backgroundTint="#FFFFFF"
+        app:elevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rv_lap_times"
+        app:rippleColor="#CCCCCC"
+        app:srcCompat="@drawable/ic_stop"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

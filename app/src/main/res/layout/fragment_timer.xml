@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/tv_timer_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Hẹn giờ"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!--    Thoi gian dem nguoc-->
+    <TextView
+        android:id="@+id/tv_timer_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="96dp"
+        android:text="00:00:00"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_timer_title" />
+
+    <!--    NumerPicker cho gio, phut, giay-->
+    <LinearLayout
+        android:id="@+id/time_picker_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="68dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_timer_time">
+
+        <NumberPicker
+            android:id="@+id/np_hours"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp" />
+
+        <NumberPicker
+            android:id="@+id/np_minutes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp" />
+
+        <NumberPicker
+            android:id="@+id/np_seconds"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp" />
+    </LinearLayout>
+
+
+    <!--    Nut Start/Pause-->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_start_pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="112dp"
+        android:layout_marginTop="176dp"
+        android:contentDescription="Start Timer"
+        app:backgroundTint="#FFFFFF"
+        app:elevation="6dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/time_picker_container"
+        app:rippleColor="#CCCCCC"
+        app:srcCompat="@drawable/ic_start" />
+
+    <!--    Nut Reset-->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="176dp"
+        android:layout_marginEnd="112dp"
+        android:contentDescription="Start Timer"
+        app:backgroundTint="#FFFFFF"
+        app:elevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/time_picker_container"
+        app:rippleColor="#CCCCCC"
+        app:srcCompat="@drawable/ic_stop" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
