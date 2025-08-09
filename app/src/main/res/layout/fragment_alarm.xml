@@ -1,54 +1,139 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#FFF0F0"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!--    Tiêu đề-->
     <TextView
-        android:id="@+id/alarmTitle"
+        android:id="@+id/tv_my_alarm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Alarm"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:text="Báo thức"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="?attr/colorPrimary"
-        android:padding="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/noAlarmText"
-        android:layout_width="wrap_content"
+    <!--    Sẽ cần một nút để chuyển chế độ sáng tối ở đây (cân nhắc)-->
+
+    <!-- Hiển thị thời gian đến báo thức tiếp theo -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_next_alarm"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Không có báo thức nào"
-        android:textSize="16sp"
-        android:textColor="?attr/colorPrimary"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:elevation="4dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/alarmTitle"
-        app:layout_constraintBottom_toTopOf="@id/addAlarmFab"
-        app:layout_constraintStart_toStartOf="parent"
+        app:cardBackgroundColor="@color/card_background"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="3dp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:gravity="center" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_my_alarm"
+        tools:visibility="visible">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp">
+
+            <!-- Icon báo thức -->
+            <ImageView
+                android:id="@+id/iv_next_alarm_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_alarm"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Text "Báo thức tiếp theo" -->
+            <TextView
+                android:id="@+id/tv_next_alarm_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Báo thức tiếp theo"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/iv_next_alarm_icon"
+                app:layout_constraintStart_toEndOf="@+id/iv_next_alarm_icon"
+                app:layout_constraintTop_toTopOf="@+id/iv_next_alarm_icon" />
+
+            <!-- Thời gian báo thức tiếp theo -->
+            <TextView
+                android:id="@+id/tv_next_alarm_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="06:30 AM"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/iv_next_alarm_icon" />
+
+            <!-- Đếm ngược thời gian -->
+            <TextView
+                android:id="@+id/tv_countdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Báo thức sau 6 giờ 6 phút"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_next_alarm_time" />
+
+            <!-- Tên báo thức -->
+            <TextView
+                android:id="@+id/tv_next_alarm_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginEnd="8dp"
+                android:text="Wake up"
+
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_countdown" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- RecyclerView cho danh sách báo thức -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/alarmRecyclerView"
-        android:layout_width="match_parent"
+        android:id="@+id/rv_alarms"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:padding="8dp"
-        app:layout_constraintTop_toBottomOf="@id/alarmTitle"
-        app:layout_constraintBottom_toTopOf="@id/addAlarmFab"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_alarm" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addAlarmFab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/ic_add"
-        android:contentDescription="Thêm báo thức"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="16dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_next_alarm"
+        tools:listitem="@layout/item_alarm" />
+
+    <!--    Nút thêm báo thức-->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_add_alarm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="32dp"
+        android:contentDescription="Add alarm"
+        android:src="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,277 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    android:elevation="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:background="@color/back"
-        android:layout_marginBottom="4dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp">
+        android:padding="16dp">
 
-    <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Thời gian báo thức -->
+        <TextView
+            android:id="@+id/tv_alarm_time"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="06:30"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Phần hiển thị báo thức (luôn hiện) -->
-        <LinearLayout
-                android:id="@+id/alarmDisplayLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#f2f0f2"
-                android:orientation="vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="16dp">
+        <!-- AM/PM -->
+        <TextView
+            android:id="@+id/tv_alarm_period"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="AM"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="@+id/tv_alarm_time"
+            app:layout_constraintStart_toEndOf="@+id/tv_alarm_time" />
 
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+        <!-- Switch bật/tắt báo thức -->
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_alarm_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/tv_alarm_time" />
 
-                <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+        <!-- Nhãn báo thức -->
+        <TextView
+            android:id="@+id/tv_alarm_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Wake up"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toStartOf="@+id/switch_alarm_enabled"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_alarm_time" />
 
-                    <TextView
-                            android:id="@+id/alarmTimeTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="08:30 AM"
-                            android:textSize="28sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black" />
+        <!-- Ngày lặp lại -->
+        <TextView
+            android:id="@+id/tv_alarm_days"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:text="Mon, Tue, Wed"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@+id/switch_alarm_enabled"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_alarm_label" />
 
-                    <TextView
-                            android:id="@+id/alarmDaysTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Mon, Tue, Wed, Thu, Fri"
-                            android:textSize="14sp"
-                            android:textColor="@android:color/darker_gray"
-                            android:layout_marginTop="4dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <TextView
-                            android:id="@+id/alarmLabelTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Đi làm"
-                            android:textSize="14sp"
-                            android:textColor="@android:color/darker_gray"
-                            android:textStyle="italic"
-                            android:layout_marginTop="2dp"
-                            android:visibility="gone"/>
-                </LinearLayout>
-
-                <Switch
-                        android:id="@+id/alarmToggleSwitch"
-                        tools:ignore="UseSwitchCompatOrMaterialXml"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_marginEnd="4dp"
-                        android:checked="true"
-                        android:minWidth="48dp"
-                        android:minHeight="48dp" />
-
-                <ImageButton
-                        android:id="@+id/deleteAlarmButton"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@android:color/transparent"
-                        android:contentDescription="Xóa báo thức"
-                        android:src="@android:drawable/ic_menu_delete"
-                        app:tint="@android:color/darker_gray"
-                        tools:ignore="TouchTargetSizeCheck" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Phần chỉnh sửa (ẩn/hiện) -->
-        <LinearLayout
-                android:id="@+id/alarmEditLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:background="#F8F9FA"
-                android:visibility="gone">
-
-            <!-- Time Picker -->
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Thời gian:"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp"/>
-
-            <TimePicker
-                    android:id="@+id/editTimePicker"
-                    android:layout_width="wrap_content"
-                    android:layout_height="120dp"
-                    android:timePickerMode="spinner"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="16dp" />
-
-            <!-- Label Input -->
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tên báo thức:"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Nhập tên báo thức"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editAlarmLabelEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapSentences" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Days of Week -->
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ngày trong tuần:"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp"/>
-
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginBottom="16dp">
-
-                <CheckBox
-                        android:id="@+id/editCheckSun"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="CN"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckMon"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T2"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckTue"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T3"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckWed"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T4"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckThu"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T5"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckFri"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T6"
-                        android:gravity="center" />
-
-                <CheckBox
-                        android:id="@+id/editCheckSat"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="T7"
-                        android:gravity="center" />
-            </LinearLayout>
-
-            <!-- Ringtone Selection -->
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Âm thanh báo thức:"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp"/>
-
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp">
-
-                <Button
-                        android:id="@+id/editSelectRingtoneButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Chọn nhạc chuông"
-                        style="?attr/materialButtonOutlinedStyle"/>
-
-                <TextView
-                        android:id="@+id/editRingtoneNameTextView"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Nhạc mặc định"
-                        android:layout_marginStart="16dp"
-                        android:textSize="14sp"/>
-            </LinearLayout>
-
-            <!-- Action Buttons -->
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="end">
-
-                <Button
-                        android:id="@+id/cancelEditButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hủy"
-                        style="?attr/materialButtonOutlinedStyle"
-                        android:layout_marginEnd="8dp" />
-
-                <Button
-                        android:id="@+id/saveEditButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Lưu" />
-            </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
 </androidx.cardview.widget.CardView>

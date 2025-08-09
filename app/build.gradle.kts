@@ -1,5 +1,7 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android") // plugin kotlin chính
+    id("org.jetbrains.kotlin.kapt") // ✅ kapt plugin đúng tên
 }
 
 android {
@@ -40,4 +42,20 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    val room_version = "2.6.1" // hoặc phiên bản mới nhất từ trang developer.android.com
+
+    implementation("androidx.room:room-runtime:$room_version")
+    annotationProcessor("androidx.room:room-compiler:$room_version")
+
+    // Nếu dùng Kotlin KAPT
+    kapt("androidx.room:room-compiler:$room_version")
+
+    // Room với Kotlin coroutines (nếu cần)
+    implementation("androidx.room:room-ktx:$room_version")
+
+    // Room với Paging 3 (nếu cần)
+    implementation("androidx.room:room-paging:$room_version")
+
+    implementation("com.google.code.gson:gson:2.11.0")
+
 }
