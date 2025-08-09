@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/addAlarmLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/back"
+        android:padding="16dp"
+        android:gravity="center_horizontal"
+        tools:context=".view.AddAlarmActivity">
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đặt Báo Thức Mới"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"/>
+
+    <TimePicker
+        android:id="@+id/timePicker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tên báo thức (tùy chọn)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/alarmLabelEditText"
+                android:layout_width="match_parent"
+                android:layout_height="51dp"
+                android:inputType="textCapSentences"
+                android:textColorHint="#546E7A" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+            android:id="@+id/daysOfWeekLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+        <CheckBox
+                android:id="@+id/checkSun"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CN" />
+
+        <CheckBox
+                android:id="@+id/checkMon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T2" />
+
+        <CheckBox
+                android:id="@+id/checkTue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T3" />
+
+        <CheckBox
+                android:id="@+id/checkWed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T4" />
+
+        <CheckBox
+                android:id="@+id/checkThu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T5" />
+
+        <CheckBox
+                android:id="@+id/checkFri"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T6" />
+
+        <CheckBox
+                android:id="@+id/checkSat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="T7" />
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+        <Button
+                android:id="@+id/selectRingtoneButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chọn nhạc chuông"/>
+        <TextView
+                android:id="@+id/ringtoneNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nhạc mặc định"
+                android:layout_marginStart="16dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Hủy"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/saveAlarmButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Lưu"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp" />
+    </LinearLayout>
+
+
+</LinearLayout>

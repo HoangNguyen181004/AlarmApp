@@ -3,17 +3,13 @@
     <item
         android:id="@+id/nav_alarm"
         android:icon="@drawable/ic_alarm"
-        android:title="Báo thức" />
-
-    <item
-        android:id="@+id/nav_timer"
-        android:icon="@drawable/ic_timer"
-        android:title="Hẹn giờ" />
-
+        android:title="Alarm" />
     <item
         android:id="@+id/nav_stopwatch"
         android:icon="@drawable/ic_stopwatch"
-        android:title="Bấm giờ" />
-
-
+        android:title="Stopwatch" />
+    <item
+        android:id="@+id/nav_timer"
+        android:icon="@drawable/ic_timer"
+        android:title="Timer" />
 </menu>

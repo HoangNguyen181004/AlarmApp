@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@color/back"
+        android:padding="32dp">
+
+    <TextView
+            android:id="@+id/alarmTimeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="08:30"
+            android:textSize="72sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+    <TextView
+            android:id="@+id/alarmLabelText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Báo thức"
+            android:textSize="24sp"
+            android:textColor="@color/black"
+            android:layout_marginBottom="48dp" />
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+        <Button
+                android:id="@+id/snoozeButton"
+                android:layout_width="100dp"
+                android:layout_height="70dp"
+                android:text="+5 phút"
+                android:textColor="@color/black"
+                android:layout_marginEnd="32dp"
+                android:clickable="true"
+                android:backgroundTint="#ddedde"
+                app:iconPadding="0dp" />
+
+        <Button
+                android:id="@+id/dismissButton"
+                android:layout_width="100dp"
+                android:layout_height="70dp"
+                android:text="Tắt"
+                android:backgroundTint="#c29baa"
+                android:textColor="@color/black"
+                android:clickable="true" />
+
+    </LinearLayout>
+
+</LinearLayout>
