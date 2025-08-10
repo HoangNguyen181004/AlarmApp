@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
@@ -6,12 +7,13 @@
     <color name="fastest_lap_color">#4CAF50</color>
     <color name="slowest_lap_color">#FF5722</color>
     <color name="average_lap_color">#FF9800</color>
-    <!--  Timer progress colors  -->
+    <!-- Timer progress colors -->
     <color name="timer_progress_color">#FF6B35</color>
     <color name="timer_progress_start">#FF6B35</color>
     <color name="timer_progress_center">#F7931E</color>
     <color name="timer_progress_end">#FFD23F</color>
-    <!--  Timer states colors  -->
+
+    <!-- Timer states colors -->
     <color name="timer_running_color">#FF6B35</color>
     <color name="timer_paused_color">#FFC107</color>
     <color name="timer_finished_color">#4CAF50</color>

@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.alarm.R;
+import com.example.alarm.utils.NotificationUtils;
 import com.example.alarm.view.fragments.AlarmFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -17,16 +18,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        NotificationUtils.createNotificationChannel(this);
+
         BottomNavigationView bottomNavigation = findViewById(R.id.bottom_navigation);
         bottomNavigation.setOnNavigationItemSelectedListener(item -> {
-            // Chỉ tập trung alarm, bỏ qua timer/stopwatch
             if (item.getItemId() == R.id.nav_alarm) {
                 loadFragment(new AlarmFragment());
                 return true;
             }
             return false;
         });
-        bottomNavigation.setSelectedItemId(R.id.nav_alarm); // Mặc định alarm
+        bottomNavigation.setSelectedItemId(R.id.nav_alarm);
     }
 
     private void loadFragment(Fragment fragment) {

@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">alarm app summer</string>
+    <string name="add_alarm">Thêm báo thức</string>
+    <string name="edit_alarm">Chỉnh sửa báo thức</string>
+    <string name="update">Cập nhật</string>
+    <string name="ringtone_label">Nhạc chuông</string>
+    <string name="change">Thay đổi</string>
+    <string name="ringtone_icon_description">Biểu tượng nhạc chuông</string>
+    <string name="alarm_label_hint">Nhập nhãn báo thức</string>
+    <string name="default_ringtone">Mặc định</string>
+    <string name="select_ringtone">Chọn nhạc chuông</string>
+    <string name="select_ringtone_description">Chọn nhạc chuông cho báo thức</string>
+    <string name="repeat_days">Lặp lại</string>
+    <string name="sun">CN</string>
+    <string name="mon">T2</string>
+    <string name="tue">T3</string>
+    <string name="wed">T4</string>
+    <string name="thu">T5</string>
+    <string name="fri">T6</string>
+    <string name="sat">T7</string>
+    <string name="sun_description">Chọn Chủ nhật</string>
+    <string name="mon_description">Chọn Thứ hai</string>
+    <string name="tue_description">Chọn Thứ ba</string>
+    <string name="wed_description">Chọn Thứ tư</string>
+    <string name="thu_description">Chọn Thứ năm</string>
+    <string name="fri_description">Chọn Thứ sáu</string>
+    <string name="sat_description">Chọn Thứ bảy</string>
+    <string name="cancel">Hủy</string>
+    <string name="cancel_description">Hủy thao tác</string>
+    <string name="save">Lưu</string>
+    <string name="save_description">Lưu báo thức</string>
+    <string name="delete">Xóa</string>
+    <string name="delete_description">Xóa báo thức</string>
+    <string name="add_alarm_description">Thêm báo thức mới</string>
 </resources>

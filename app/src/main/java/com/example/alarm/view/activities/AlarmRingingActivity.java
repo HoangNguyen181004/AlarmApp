@@ -1,5 +1,7 @@
 package com.example.alarm.view.activities;
 
+import android.content.Context;
+import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -10,17 +12,25 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.alarm.R;
 import com.example.alarm.model.entities.Alarm;
+import com.example.alarm.utils.AlarmUtils;
 import com.example.alarm.utils.NotificationUtils;
+import com.example.alarm.viewmodel.AlarmViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AlarmRingingActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private Vibrator vibrator;
-    private List<Alarm> alarms; // xử lý trùng alarm
+    private List<Alarm> alarms = new ArrayList<>();
+    private AlarmViewModel viewModel;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,19 +41,33 @@ public class AlarmRingingActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         setContentView(R.layout.activity_alarm);
 
-        int alarmID = getIntent().getIntExtra("ALARM_ID", -1);
+        viewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
+        int alarmId = getIntent().getIntExtra("ALARM_ID", -1);
 
         TextView timeText = findViewById(R.id.alarmTimeText);
         TextView labelText = findViewById(R.id.alarmLabelText);
-        timeText.setText(String.format("%0.2d:%0.2d", alarms.get(0).hour, alarms.get(0).minute));
-        labelText.setText(alarms.get(0).label);
 
-        startRinging(alarms.get(0).ringtoneUri);
+        // Load alarm async để tránh main thread
+        executor.execute(() -> {
+            Alarm alarm = viewModel.getAlarmById(alarmId); // Dòng 47: Chạy trên background
+            runOnUiThread(() -> {
+                if (alarm != null) {
+                    alarms.add(alarm);
+                    timeText.setText(String.format("%02d:%02d", alarm.hour, alarm.minute));
+                    labelText.setText(alarm.label.isEmpty() ? "Báo thức" : alarm.label);
+                    startRinging(alarm.ringtoneUri);
+                } else {
+                    finish(); // Không có alarm, thoát
+                }
+            });
+        });
 
         Button snoozeButton = findViewById(R.id.snoozeButton);
         snoozeButton.setOnClickListener(v -> {
             stopRinging();
-            AlarmUtils.snoozeAlarm(this, alarms.get(0), 5); // Snooze 5 phút
+            if (!alarms.isEmpty()) {
+                AlarmUtils.snoozeAlarm(this, alarms.get(0), 5);
+            }
             finish();
         });
 
@@ -52,12 +76,11 @@ public class AlarmRingingActivity extends AppCompatActivity {
             stopRinging();
             for (Alarm alarm : alarms) {
                 alarm.enabled = false;
-                // update qua viewmodel
+                viewModel.update(alarm);
             }
-            NotificationUtils.cancalNotification(this, alarmID);
+            NotificationUtils.cancelNotification(this, alarmId);
             finish();
         });
-
     }
 
     private void startRinging(String ringtoneUriStr) {
@@ -75,23 +98,44 @@ public class AlarmRingingActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         long[] pattern = {0, 1000, 1000};
         vibrator.vibrate(pattern, 0);
     }
 
+    private boolean isStopped = false;
+
     private void stopRinging() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
+        if (mediaPlayer != null && !isStopped) {
+            try {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+            } catch (IllegalStateException e) {
+                e.printStackTrace(); // Log lỗi nhưng không crash
+            } finally {
+                try {
+                    mediaPlayer.release();
+                } catch (Exception ignore) {
+                }
+                mediaPlayer = null;
+                isStopped = true;
+            }
         }
+
         if (vibrator != null) {
-            vibrator.cancel();
+            try {
+                vibrator.cancel();
+            } catch (Exception ignore) {
+            }
+            vibrator = null;
         }
     }
 
+    @Override
     protected void onDestroy() {
         stopRinging();
+        executor.shutdown();
         super.onDestroy();
     }
 }

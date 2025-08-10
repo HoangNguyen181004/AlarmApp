@@ -21,9 +21,11 @@ public interface AlarmDao {
     @Delete
     void delete(Alarm alarm);
 
-    @Query("SELECT * FROM alarms ORDER BY hour, minute")
+    @Query("SELECT * FROM alarm ORDER BY hour, minute")
     LiveData<List<Alarm>> getAllAlarms();
 
-    @Query("SELECT * FROM alarms WHERE hour = :hour AND minute = :minute")
+    @Query("SELECT * FROM alarm WHERE hour = :hour AND minute = :minute")
     List<Alarm> getAlarmsByTime(int hour, int minute);
+    @Query("SELECT * FROM alarm WHERE id = :id")
+    Alarm getAlarmById(int id);
 }

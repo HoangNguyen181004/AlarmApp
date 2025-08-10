@@ -20,17 +20,22 @@ import com.example.alarm.model.entities.Alarm;
 import com.example.alarm.viewmodel.AlarmViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AddAlarmActivity extends AppCompatActivity {
     private TimePicker timePicker;
     private TextInputEditText labelEditText;
     private CheckBox[] dayCheckBoxes;
     private TextView ringtoneNameTextView;
+    private Button selectRingtoneButton;
+    private Button deleteButton, cancelButton, saveButton;
     private Uri ringtoneUri;
     private AlarmViewModel viewModel;
+    private Alarm existingAlarm;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final ActivityResultLauncher<Intent> ringtonePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -40,7 +45,7 @@ public class AddAlarmActivity extends AppCompatActivity {
                     if (ringtoneUri != null) {
                         ringtoneNameTextView.setText(RingtoneManager.getRingtone(this, ringtoneUri).getTitle(this));
                     } else {
-                        ringtoneNameTextView.setText("Nhạc mặc định");
+                        ringtoneNameTextView.setText(getString(R.string.default_ringtone));
                     }
                 }
             });
@@ -55,6 +60,10 @@ public class AddAlarmActivity extends AppCompatActivity {
         timePicker = findViewById(R.id.timePicker);
         labelEditText = findViewById(R.id.alarmLabelEditText);
         ringtoneNameTextView = findViewById(R.id.ringtoneNameTextView);
+        selectRingtoneButton = findViewById(R.id.selectRingtoneButton);
+        deleteButton = findViewById(R.id.buttonDeleteAlarm);
+        cancelButton = findViewById(R.id.cancelButton);
+        saveButton = findViewById(R.id.saveAlarmButton);
 
         dayCheckBoxes = new CheckBox[]{
                 findViewById(R.id.checkSun), findViewById(R.id.checkMon),
@@ -63,23 +72,57 @@ public class AddAlarmActivity extends AppCompatActivity {
                 findViewById(R.id.checkSat)
         };
 
-        Button selectRingtoneButton = findViewById(R.id.selectRingtoneButton);
+        // Kiểm tra edit hay add mới
+        int alarmId = getIntent().getIntExtra("ALARM_ID", -1);
+        if (alarmId != -1) {
+            executor.execute(() -> {
+                existingAlarm = viewModel.getAlarmById(alarmId); // Dòng 76: Chạy trên background
+                runOnUiThread(() -> {
+                    if (existingAlarm != null) {
+                        setTitle(R.string.edit_alarm);
+                        loadAlarmData(existingAlarm);
+                        deleteButton.setEnabled(true);
+                    } else {
+                        setTitle(R.string.add_alarm);
+                        deleteButton.setEnabled(false);
+                    }
+                });
+            });
+        } else {
+            setTitle(R.string.add_alarm);
+            deleteButton.setEnabled(false);
+        }
+
         selectRingtoneButton.setOnClickListener(v -> {
             Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
             intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM);
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Chọn nhạc báo thức");
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, getString(R.string.select_ringtone));
             intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, ringtoneUri);
             ringtonePickerLauncher.launch(intent);
         });
 
-        Button saveButton = findViewById(R.id.saveAlarmButton);
-        saveButton.setOnClickListener(v -> saveAlarm());
-
-        Button cancelButton = findViewById(R.id.cancelButton);
+        saveButton.setOnClickListener(v -> saveOrUpdateAlarm());
         cancelButton.setOnClickListener(v -> finish());
+        deleteButton.setOnClickListener(v -> {
+            if (existingAlarm != null) {
+                viewModel.delete(existingAlarm);
+            }
+            finish();
+        });
     }
 
-    private void saveAlarm() {
+    private void loadAlarmData(Alarm alarm) {
+        timePicker.setHour(alarm.hour);
+        timePicker.setMinute(alarm.minute);
+        labelEditText.setText(alarm.label);
+        for (int i = 0; i < dayCheckBoxes.length; i++) {
+            dayCheckBoxes[i].setChecked(alarm.repeatDays.get(i));
+        }
+        ringtoneUri = Uri.parse(alarm.ringtoneUri);
+        ringtoneNameTextView.setText(RingtoneManager.getRingtone(this, ringtoneUri).getTitle(this));
+    }
+
+    private void saveOrUpdateAlarm() {
         int hour = timePicker.getHour();
         int minute = timePicker.getMinute();
         String label = labelEditText.getText().toString();
@@ -91,8 +134,23 @@ public class AddAlarmActivity extends AppCompatActivity {
 
         String ringtone = (ringtoneUri != null) ? ringtoneUri.toString() : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString();
 
-        Alarm alarm = new Alarm(0, hour, minute, label, repeatDays, ringtone, true);
-        viewModel.insert(alarm); // Lưu và lên lịch
+        if (existingAlarm != null) {
+            existingAlarm.hour = hour;
+            existingAlarm.minute = minute;
+            existingAlarm.label = label;
+            existingAlarm.repeatDays = repeatDays;
+            existingAlarm.ringtoneUri = ringtone;
+            viewModel.update(existingAlarm);
+        } else {
+            Alarm alarm = new Alarm(0, hour, minute, label, repeatDays, ringtone, true); // Không set ID, để Room tự generate
+            viewModel.insert(alarm);
+        }
         finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        executor.shutdown();
+        super.onDestroy();
     }
 }

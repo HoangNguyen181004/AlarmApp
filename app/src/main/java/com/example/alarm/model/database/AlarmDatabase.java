@@ -6,11 +6,12 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverter;
+import androidx.room.TypeConverters;
 
 import com.example.alarm.model.entities.Alarm;
 
 @Database(entities = {Alarm.class}, version = 1, exportSchema = false)
-@TypeConverter(Converters.class)
+@TypeConverters(Converters.class)
 public abstract class AlarmDatabase extends RoomDatabase {
     public abstract AlarmDao alarmDao();
     private static volatile AlarmDatabase INSTANCE;
