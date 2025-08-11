@@ -16,6 +16,15 @@ public class AlarmReceiver extends BroadcastReceiver {
             // Ở đây giản hóa: khởi động service để hiển thị notification và activity
             Intent serviceIntent = new Intent(context, AlarmService.class);
             serviceIntent.putExtra("ALARM_ID", alarmId);
+
+            // Pass snooze display info if available
+            if (intent.getBooleanExtra("IS_SNOOZE", false)) {
+                serviceIntent.putExtra("IS_SNOOZE", true);
+                serviceIntent.putExtra("SNOOZE_HOUR", intent.getIntExtra("SNOOZE_HOUR", -1));
+                serviceIntent.putExtra("SNOOZE_MINUTE", intent.getIntExtra("SNOOZE_MINUTE", -1));
+                serviceIntent.putExtra("SNOOZE_LABEL", intent.getStringExtra("SNOOZE_LABEL"));
+            }
+
             context.startService(serviceIntent);
         }
     }

@@ -54,7 +54,8 @@ public class AlarmAdapter extends ListAdapter<Alarm, AlarmAdapter.AlarmViewHolde
 
     public static class AlarmViewHolder extends RecyclerView.ViewHolder {
         TextView timeTextView, periodTextView, labelTextView, daysTextView;
-        SwitchCompat toggleSwitch; // Sửa: SwitchCompat thay vì Switch
+        SwitchCompat toggleSwitch;
+        private int currentAlarmId = -1; // Track current alarm ID
 
         public AlarmViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -62,19 +63,40 @@ public class AlarmAdapter extends ListAdapter<Alarm, AlarmAdapter.AlarmViewHolde
             periodTextView = itemView.findViewById(R.id.tv_alarm_period);
             labelTextView = itemView.findViewById(R.id.tv_alarm_label);
             daysTextView = itemView.findViewById(R.id.tv_alarm_days);
-            toggleSwitch = itemView.findViewById(R.id.switch_alarm_enabled); // Dòng 73: Đã khớp
+            toggleSwitch = itemView.findViewById(R.id.switch_alarm_enabled);
         }
 
         public void bind(Alarm alarm, AlarmViewModel viewModel) {
+            // Clear previous listener to prevent stale references
+            toggleSwitch.setOnCheckedChangeListener(null);
+
+            // Update UI
             timeTextView.setText(String.format("%02d:%02d", alarm.hour, alarm.minute));
             periodTextView.setText(alarm.hour >= 12 ? "PM" : "AM");
             labelTextView.setText(alarm.label.isEmpty() ? "Báo thức" : alarm.label);
             daysTextView.setText(getDaysString(alarm.repeatDays));
+
+            // Set switch state WITHOUT triggering listener
             toggleSwitch.setChecked(alarm.enabled);
 
+            // Track current alarm ID
+            currentAlarmId = alarm.id;
+
+            // Set new listener that fetches fresh data
             toggleSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                alarm.enabled = isChecked;
-                viewModel.update(alarm);
+                // Double-check we're still working with the same alarm
+                if (currentAlarmId != alarm.id) {
+                    return; // Ignore stale events
+                }
+
+                // Get fresh alarm data from database to avoid stale state
+                new Thread(() -> {
+                    Alarm freshAlarm = viewModel.getAlarmById(currentAlarmId);
+                    if (freshAlarm != null) {
+                        freshAlarm.enabled = isChecked;
+                        viewModel.update(freshAlarm);
+                    }
+                }).start();
             });
 
             itemView.setOnClickListener(v -> {

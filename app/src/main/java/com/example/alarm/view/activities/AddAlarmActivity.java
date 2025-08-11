@@ -115,11 +115,25 @@ public class AddAlarmActivity extends AppCompatActivity {
         timePicker.setHour(alarm.hour);
         timePicker.setMinute(alarm.minute);
         labelEditText.setText(alarm.label);
+
         for (int i = 0; i < dayCheckBoxes.length; i++) {
             dayCheckBoxes[i].setChecked(alarm.repeatDays.get(i));
         }
-        ringtoneUri = Uri.parse(alarm.ringtoneUri);
-        ringtoneNameTextView.setText(RingtoneManager.getRingtone(this, ringtoneUri).getTitle(this));
+
+        // Safe handling of ringtone URI
+        try {
+            ringtoneUri = Uri.parse(alarm.ringtoneUri);
+            android.media.Ringtone ringtone = RingtoneManager.getRingtone(this, ringtoneUri);
+            if (ringtone != null) {
+                ringtoneNameTextView.setText(ringtone.getTitle(this));
+            } else {
+                ringtoneNameTextView.setText(getString(R.string.default_ringtone));
+                ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            }
+        } catch (Exception e) {
+            ringtoneNameTextView.setText(getString(R.string.default_ringtone));
+            ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        }
     }
 
     private void saveOrUpdateAlarm() {
@@ -150,7 +164,18 @@ public class AddAlarmActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        executor.shutdown();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+            try {
+                // Wait for 1 second for tasks to complete
+                if (!executor.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
         super.onDestroy();
     }
 }

@@ -15,17 +15,33 @@ public class AlarmService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        int alarmId = intent.getIntExtra("ALARM_ID", -1);
-        if (alarmId != -1) {
-            // Hiển thị noti
-            NotificationUtils.showNotification(this, alarmId, "Alarm", "Time to wake up!");
+        if (intent != null) {
+            int alarmId = intent.getIntExtra("ALARM_ID", -1);
+            String alarmLabel = intent.getStringExtra("ALARM_LABEL");
 
-            // Khởi động ringing activity
-            Intent ringingIntent = new Intent(this, AlarmRingingActivity.class);
-            ringingIntent.putExtra("ALARM_ID", alarmId);
-            ringingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(ringingIntent);
+            if (alarmId != -1) {
+                // Start AlarmRingingActivity
+                Intent alarmIntent = new Intent(this, AlarmRingingActivity.class);
+                alarmIntent.putExtra("ALARM_ID", alarmId);
+
+                // Pass snooze display info if available
+                if (intent.getBooleanExtra("IS_SNOOZE", false)) {
+                    alarmIntent.putExtra("IS_SNOOZE", true);
+                    alarmIntent.putExtra("SNOOZE_HOUR", intent.getIntExtra("SNOOZE_HOUR", -1));
+                    alarmIntent.putExtra("SNOOZE_MINUTE", intent.getIntExtra("SNOOZE_MINUTE", -1));
+                    alarmIntent.putExtra("SNOOZE_LABEL", intent.getStringExtra("SNOOZE_LABEL"));
+                }
+
+                alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(alarmIntent);
+
+                // Hiển thị noti
+                NotificationUtils.showNotification(this, alarmId, "Alarm", alarmLabel);
+            }
         }
+
         return START_NOT_STICKY;
     }
 }

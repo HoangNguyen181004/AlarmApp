@@ -21,6 +21,7 @@ import com.example.alarm.utils.NotificationUtils;
 import com.example.alarm.viewmodel.AlarmViewModel;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +32,12 @@ public class AlarmRingingActivity extends AppCompatActivity {
     private List<Alarm> alarms = new ArrayList<>();
     private AlarmViewModel viewModel;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    // Add fields to handle snooze display
+    private boolean isSnoozeAlarm = false;
+    private int displayHour = -1;
+    private int displayMinute = -1;
+    private String displayLabel = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,17 +51,32 @@ public class AlarmRingingActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
         int alarmId = getIntent().getIntExtra("ALARM_ID", -1);
 
+        // Check if this is a snooze alarm with custom time
+        isSnoozeAlarm = getIntent().getBooleanExtra("IS_SNOOZE", false);
+        displayHour = getIntent().getIntExtra("SNOOZE_HOUR", -1);
+        displayMinute = getIntent().getIntExtra("SNOOZE_MINUTE", -1);
+        displayLabel = getIntent().getStringExtra("SNOOZE_LABEL");
+
         TextView timeText = findViewById(R.id.alarmTimeText);
         TextView labelText = findViewById(R.id.alarmLabelText);
 
         // Load alarm async để tránh main thread
         executor.execute(() -> {
-            Alarm alarm = viewModel.getAlarmById(alarmId); // Dòng 47: Chạy trên background
+            Alarm alarm = viewModel.getAlarmById(alarmId);
             runOnUiThread(() -> {
                 if (alarm != null) {
                     alarms.add(alarm);
-                    timeText.setText(String.format("%02d:%02d", alarm.hour, alarm.minute));
-                    labelText.setText(alarm.label.isEmpty() ? "Báo thức" : alarm.label);
+
+                    // Display snooze time if available, otherwise original time
+                    if (isSnoozeAlarm && displayHour != -1 && displayMinute != -1) {
+                        timeText.setText(String.format("%02d:%02d", displayHour, displayMinute));
+                        labelText.setText(displayLabel != null ? displayLabel :
+                                (alarm.label.isEmpty() ? "Báo thức" : "Snooze: " + alarm.label));
+                    } else {
+                        timeText.setText(String.format("%02d:%02d", alarm.hour, alarm.minute));
+                        labelText.setText(alarm.label.isEmpty() ? "Báo thức" : alarm.label);
+                    }
+
                     startRinging(alarm.ringtoneUri);
                 } else {
                     finish(); // Không có alarm, thoát
@@ -66,7 +88,14 @@ public class AlarmRingingActivity extends AppCompatActivity {
         snoozeButton.setOnClickListener(v -> {
             stopRinging();
             if (!alarms.isEmpty()) {
-                AlarmUtils.snoozeAlarm(this, alarms.get(0), 5);
+                // Calculate snooze time
+                Calendar snoozeTime = Calendar.getInstance();
+                snoozeTime.add(Calendar.MINUTE, 5);
+
+                // Use enhanced snooze method
+                AlarmUtils.snoozeAlarmWithDisplay(this, alarms.get(0), 5,
+                        snoozeTime.get(Calendar.HOUR_OF_DAY),
+                        snoozeTime.get(Calendar.MINUTE));
             }
             finish();
         });
@@ -135,7 +164,17 @@ public class AlarmRingingActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         stopRinging();
-        executor.shutdown();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
         super.onDestroy();
     }
 }

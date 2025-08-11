@@ -116,4 +116,60 @@ public class AlarmUtils {
         Log.d(TAG, "Snoozing alarm ID: " + alarm.id + " for " + minutes + " minutes.");
         scheduleAlarm(context, snoozedAlarm);
     }
+
+    public static void snoozeAlarmWithDisplay(Context context, Alarm alarm, int minutes, int displayHour, int displayMinute) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            Log.e(TAG, "AlarmManager is null. Cannot snooze alarm for ID: " + alarm.id);
+            return;
+        }
+
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        intent.putExtra("ALARM_ID", alarm.id);
+
+        // Add snooze display info to intent
+        intent.putExtra("IS_SNOOZE", true);
+        intent.putExtra("SNOOZE_HOUR", displayHour);
+        intent.putExtra("SNOOZE_MINUTE", displayMinute);
+        intent.putExtra("SNOOZE_LABEL", "Snooze: " + (alarm.label.isEmpty() ? "Báo thức" : alarm.label));
+
+        int requestCode = alarm.id + 10000; // Different request code for snooze to avoid conflicts
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, minutes);
+        long triggerTime = calendar.getTimeInMillis();
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+                        Log.d(TAG, "Snooze alarm scheduled with setExactAndAllowWhileIdle for ID: " + alarm.id + " at " + triggerTime + " (Display: " + displayHour + ":" + displayMinute + ")");
+                    } else {
+                        alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+                        Log.d(TAG, "Snooze alarm scheduled with setExact for ID: " + alarm.id + " at " + triggerTime + " (Display: " + displayHour + ":" + displayMinute + ")");
+                    }
+                } else {
+                    Log.w(TAG, "Cannot schedule exact alarms for snooze. App needs SCHEDULE_EXACT_ALARM permission. Alarm ID: " + alarm.id);
+                }
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+                    Log.d(TAG, "Legacy snooze alarm scheduled with setExactAndAllowWhileIdle for ID: " + alarm.id + " at " + triggerTime + " (Display: " + displayHour + ":" + displayMinute + ")");
+                } else {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent);
+                    Log.d(TAG, "Legacy snooze alarm scheduled with setExact for ID: " + alarm.id + " at " + triggerTime + " (Display: " + displayHour + ":" + displayMinute + ")");
+                }
+            }
+        } catch (SecurityException e) {
+            Log.e(TAG, "SecurityException while scheduling snooze alarm for ID: " + alarm.id + ". Missing SCHEDULE_EXACT_ALARM permission or other security issue.", e);
+        }
+    }
 }
