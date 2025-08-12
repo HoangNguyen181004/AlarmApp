@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.alarm.R;
 import com.example.alarm.model.entities.Alarm;
+import com.example.alarm.services.AlarmService;
 import com.example.alarm.utils.AlarmUtils;
 import com.example.alarm.utils.NotificationUtils;
 import com.example.alarm.viewmodel.AlarmViewModel;
@@ -87,6 +88,13 @@ public class AlarmRingingActivity extends AppCompatActivity {
         Button snoozeButton = findViewById(R.id.snoozeButton);
         snoozeButton.setOnClickListener(v -> {
             stopRinging();
+
+            // Tắt service
+            Intent serviceIntent = new Intent(this, AlarmService.class);
+            serviceIntent.setAction(AlarmService.ACTION_STOP_ALARM);
+            serviceIntent.putExtra("ALARM_ID", alarmId);
+            startService(serviceIntent);
+
             if (!alarms.isEmpty()) {
                 // Calculate snooze time
                 Calendar snoozeTime = Calendar.getInstance();
@@ -97,12 +105,20 @@ public class AlarmRingingActivity extends AppCompatActivity {
                         snoozeTime.get(Calendar.HOUR_OF_DAY),
                         snoozeTime.get(Calendar.MINUTE));
             }
+            NotificationUtils.cancelNotification(this, alarmId);
             finish();
         });
 
         Button dismissButton = findViewById(R.id.dismissButton);
         dismissButton.setOnClickListener(v -> {
             stopRinging();
+
+            // Tắt service
+            Intent serviceIntent = new Intent(this, AlarmService.class);
+            serviceIntent.setAction(AlarmService.ACTION_STOP_ALARM);
+            serviceIntent.putExtra("ALARM_ID", alarmId);
+            startService(serviceIntent);
+
             for (Alarm alarm : alarms) {
                 alarm.enabled = false;
                 viewModel.update(alarm);
