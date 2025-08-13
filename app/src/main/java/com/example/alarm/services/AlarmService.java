@@ -13,8 +13,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.Vibrator;
 import android.util.Log;
-
-import com.example.alarm.R;
 import com.example.alarm.utils.NotificationUtils;
 import com.example.alarm.view.activities.AlarmRingingActivity;
 
@@ -29,8 +27,10 @@ public class AlarmService extends Service {
 
     // Auto stop after 2 minutes if no action
     private static final long AUTO_STOP_DELAY = 2 * 60 * 1000; // 2 phút
+    private static final int FOREGROUND_NOTIFICATION_ID = 9999; // ID riêng cho foreground service
 
     private int currentAlarmId = -1;
+    private boolean isScreenOnMode = false; // Flag để track mode hiện tại
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,6 +46,7 @@ public class AlarmService extends Service {
                 int alarmId = intent.getIntExtra("ALARM_ID", -1);
                 Log.d(TAG, "Stopping alarm service for ID: " + alarmId);
                 stopAlarmRinging();
+                stopForeground(true);
                 stopSelf();
                 return START_NOT_STICKY;
             }
@@ -60,20 +61,25 @@ public class AlarmService extends Service {
 
                 // Kiểm tra màn hình có bật không
                 boolean isScreenOn = isScreenOn();
+                isScreenOnMode = isScreenOn;
                 Log.d(TAG, "Screen is on: " + isScreenOn);
 
                 String timeStr = getCurrentTimeString();
 
                 if (!isScreenOn) {
-                    // Màn hình tắt - chỉ mở Activity, không startForeground
-                    startAlarmActivity(intent);
-                    Log.d(TAG, "Screen off - started activity only");
-                } else {
-                    // Màn hình bật - tạo foreground notification
-                    Notification notification = NotificationUtils.buildAlarmNotification(
+                    // Màn hình tắt - sử dụng notification ẩn và hiển thị Activity
+                    Notification hiddenNotification = NotificationUtils.buildHiddenServiceNotification(
                             this, alarmId, timeStr, alarmLabel != null ? alarmLabel : "Báo thức");
-                    startForeground(alarmId, notification);
-                    Log.d(TAG, "Screen on - showing notification only");
+                    startForeground(FOREGROUND_NOTIFICATION_ID, hiddenNotification);
+
+                    startAlarmActivity(intent);
+                    Log.d(TAG, "Screen off - started activity with hidden notification");
+                } else {
+                    // Màn hình bật - hiển thị notification đầy đủ
+                    Notification fullNotification = NotificationUtils.buildAlarmNotification(
+                            this, alarmId, timeStr, alarmLabel != null ? alarmLabel : "Báo thức");
+                    startForeground(FOREGROUND_NOTIFICATION_ID, fullNotification);
+                    Log.d(TAG, "Screen on - showing full notification");
                 }
 
                 // Bắt đầu phát chuông báo thức
@@ -102,7 +108,12 @@ public class AlarmService extends Service {
         alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
                 Intent.FLAG_ACTIVITY_CLEAR_TOP |
                 Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(alarmIntent);
+
+        try {
+            startActivity(alarmIntent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting alarm activity", e);
+        }
     }
 
     private void startAlarmRinging(String ringtoneUri, boolean shouldVibrate) {
@@ -169,9 +180,13 @@ public class AlarmService extends Service {
         autoStopRunnable = () -> {
             Log.d(TAG, "Auto stopping alarm after timeout");
             stopAlarmRinging();
+
+            // Hủy notification user-visible nếu có
             if (currentAlarmId != -1) {
                 NotificationUtils.cancelNotification(this, currentAlarmId);
             }
+
+            stopForeground(true);
             stopSelf();
         };
 
@@ -196,6 +211,13 @@ public class AlarmService extends Service {
     public void onDestroy() {
         Log.d(TAG, "AlarmService destroyed");
         stopAlarmRinging();
+
+        // Hủy notification user-visible nếu có
+        if (currentAlarmId != -1) {
+            NotificationUtils.cancelNotification(this, currentAlarmId);
+        }
+
+        stopForeground(true);
         super.onDestroy();
     }
 }

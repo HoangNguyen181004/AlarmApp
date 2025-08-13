@@ -41,9 +41,15 @@
         <!-- Alarm Ringing Activity (hiển thị khi báo thức kêu, hỗ trợ lock screen) -->
         <activity
             android:name=".view.activities.AlarmRingingActivity"
-            android:showWhenLocked="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/AlarmActivityTheme"
+            android:showOnLockScreen="true"
             android:turnScreenOn="true"
-            android:exported="false" />
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <!-- Alarm Receiver -->
         <receiver android:name=".receiver.AlarmReceiver"

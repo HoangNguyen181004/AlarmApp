@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 public class AlarmNotificationActionReceiver extends BroadcastReceiver {
     private static final String TAG = "AlarmNotificationAction";
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private AlarmViewModel viewModel;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -59,7 +60,14 @@ public class AlarmNotificationActionReceiver extends BroadcastReceiver {
                     if (alarm.repeatDays == null || !hasRepeatDays(alarm.repeatDays)) {
                         alarm.enabled = false;
                         db.alarmDao().update(alarm);
-                        Log.d(TAG, "Disabled one-time alarm ID: " + alarmId);
+                        Log.d(TAG, "DISABLED one-time alarm ID: " + alarmId);
+
+                        // THÊM: Gửi broadcast để UI cập nhật
+                        Intent updateIntent = new Intent("com.example.alarm.ACTION_ALARM_STATE_CHANGED");
+                        updateIntent.putExtra("ALARM_ID", alarmId);
+                        updateIntent.putExtra("ENABLED", false);
+                        context.sendBroadcast(updateIntent);
+                        Log.d(TAG, "Sent broadcast for UI update");
                     } else {
                         Log.d(TAG, "Repeating alarm ID: " + alarmId + " - keeping enabled");
                     }

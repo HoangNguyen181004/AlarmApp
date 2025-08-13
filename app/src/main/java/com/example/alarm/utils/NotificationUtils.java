@@ -15,8 +15,10 @@ import com.example.alarm.receiver.AlarmNotificationActionReceiver;
 import com.example.alarm.view.activities.AlarmRingingActivity;
 
 public class NotificationUtils {
-    public static final String CHANNEL_ID = "alarm_channel_app_v2"; // Đảm bảo ID kênh là duy nhất
+    public static final String CHANNEL_ID = "alarm_channel_app_v2"; // Kênh chính cho notification hiển thị
+    public static final String HIDDEN_CHANNEL_ID = "alarm_service_hidden"; // Kênh ẩn cho foreground service
     private static final String CHANNEL_NAME = "Báo thức Ứng dụng";
+    private static final String HIDDEN_CHANNEL_NAME = "Dịch vụ báo thức";
 
     public static final String ACTION_DISMISS = "com.example.alarm.ACTION_DISMISS";
     public static final String ACTION_SNOOZE = "com.example.alarm.ACTION_SNOOZE";
@@ -27,32 +29,37 @@ public class NotificationUtils {
     public static final int REQUEST_CODE_DISMISS_BASE = 2000;
     public static final int REQUEST_CODE_SNOOZE_BASE = 3000;
 
-
     public static void createNotificationChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Thông báo khi báo thức ứng dụng reo");
-            channel.setSound(null, null); // QUAN TRỌNG: Không có âm thanh từ kênh
-            channel.enableVibration(false); // QUAN TRỌNG: Không rung từ kênh
-            channel.setBypassDnd(true); // Bỏ qua chế độ không làm phiền
-            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC); // Hiển thị trên lockscreen
-            channel.setShowBadge(true);
-
             NotificationManager manager = context.getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-            }
+            if (manager == null) return;
+
+            // Kênh chính cho notification hiển thị
+            NotificationChannel mainChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            mainChannel.setDescription("Thông báo khi báo thức ứng dụng reo");
+            mainChannel.setSound(null, null); // QUAN TRỌNG: Không có âm thanh từ kênh
+            mainChannel.enableVibration(false); // QUAN TRỌNG: Không rung từ kênh
+            mainChannel.setBypassDnd(true); // Bỏ qua chế độ không làm phiền
+            mainChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC); // Hiển thị trên lockscreen
+            mainChannel.setShowBadge(true);
+            manager.createNotificationChannel(mainChannel);
+
+            // Kênh ẩn cho foreground service (không hiển thị với người dùng)
+            NotificationChannel hiddenChannel = new NotificationChannel(HIDDEN_CHANNEL_ID, HIDDEN_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+            hiddenChannel.setDescription("Dịch vụ nền cho báo thức");
+            hiddenChannel.setSound(null, null);
+            hiddenChannel.enableVibration(false);
+            hiddenChannel.setShowBadge(false);
+            hiddenChannel.setLockscreenVisibility(Notification.VISIBILITY_SECRET); // Ẩn trên lockscreen
+            manager.createNotificationChannel(hiddenChannel);
         }
     }
 
-    // alarmId: ID của báo thức
-    // timeStr: Chuỗi thời gian hiển thị (ví dụ: "08:00")
-    // label: Nhãn của báo thức
+    // Notification chính cho màn hình bật (có thể tương tác)
     public static Notification buildAlarmNotification(Context context, int alarmId, String timeStr, String label) {
         // Intent khi nhấn vào nội dung thông báo (để mở AlarmRingingActivity)
         Intent openActivityIntent = new Intent(context, AlarmRingingActivity.class);
         openActivityIntent.putExtra(EXTRA_ALARM_ID, alarmId);
-        // Truyền thêm thông tin mà Activity có thể cần
         openActivityIntent.putExtra("ALARM_LABEL", label);
         openActivityIntent.putExtra("ALARM_TIME_STR", timeStr);
         openActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -74,9 +81,6 @@ public class NotificationUtils {
         Intent snoozeIntent = new Intent(context, AlarmNotificationActionReceiver.class);
         snoozeIntent.setAction(ACTION_SNOOZE);
         snoozeIntent.putExtra(EXTRA_ALARM_ID, alarmId);
-        // Nếu bạn muốn truyền thêm thông tin cho snooze (ví dụ: các chi tiết của báo thức gốc),
-        // bạn có thể thêm chúng vào snoozeIntent ở đây.
-        // Ví dụ: snoozeIntent.putExtra("ORIGINAL_ALARM_LABEL", label);
         PendingIntent snoozePendingIntent = PendingIntent.getBroadcast(context,
                 REQUEST_CODE_SNOOZE_BASE + alarmId,
                 snoozeIntent,
@@ -95,7 +99,29 @@ public class NotificationUtils {
                 .addAction(0, "Tắt", dismissPendingIntent)
                 .addAction(0, "Báo lại 5 phút", snoozePendingIntent)
                 .setDeleteIntent(dismissPendingIntent) // Nếu thông báo bị hủy bằng cách khác
-                // .setUsesChronometer(true) // Cân nhắc nếu bạn muốn hiển thị thời gian trôi qua
+                .build();
+    }
+
+    // Notification ẩn cho foreground service (màn hình tắt)
+    public static Notification buildHiddenServiceNotification(Context context, int alarmId, String timeStr, String label) {
+        // Intent đơn giản để mở activity khi cần
+        Intent openActivityIntent = new Intent(context, AlarmRingingActivity.class);
+        openActivityIntent.putExtra(EXTRA_ALARM_ID, alarmId);
+        openActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent openPendingIntent = PendingIntent.getActivity(context,
+                REQUEST_CODE_OPEN_ACTIVITY_BASE + alarmId + 10000, // Offset để tránh conflict
+                openActivityIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        return new NotificationCompat.Builder(context, HIDDEN_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_alarm)
+                .setContentTitle("Dịch vụ báo thức")
+                .setContentText("Đang chạy trong nền")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .setContentIntent(openPendingIntent)
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET) // Ẩn trên lock screen
                 .build();
     }
 
@@ -105,7 +131,6 @@ public class NotificationUtils {
         Notification notification = buildAlarmNotification(context, alarmId, timeStr, label);
         manager.notify(alarmId, notification);
     }
-
 
     public static void cancelNotification(Context context, int alarmId) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

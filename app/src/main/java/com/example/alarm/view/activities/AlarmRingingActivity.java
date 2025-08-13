@@ -1,12 +1,17 @@
 package com.example.alarm.view.activities;
 
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.os.Vibrator;
+import android.util.Log;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
@@ -28,6 +33,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AlarmRingingActivity extends AppCompatActivity {
+    private static final String TAG = "AlarmRingingActivity";
+
     private MediaPlayer mediaPlayer;
     private Vibrator vibrator;
     private List<Alarm> alarms = new ArrayList<>();
@@ -40,17 +47,24 @@ public class AlarmRingingActivity extends AppCompatActivity {
     private int displayMinute = -1;
     private String displayLabel = "";
 
+    private PowerManager.WakeLock wakeLock;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "AlarmRingingActivity onCreate");
         super.onCreate(savedInstanceState);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
+        // Thiết lập window flags để hiển thị trên lock screen
+        setupWindowFlags();
+
+        // Acquire wake lock để giữ màn hình sáng
+        acquireWakeLock();
+
         setContentView(R.layout.activity_alarm);
 
         viewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
         int alarmId = getIntent().getIntExtra("ALARM_ID", -1);
+        Log.d(TAG, "Alarm ID: " + alarmId);
 
         // Check if this is a snooze alarm with custom time
         isSnoozeAlarm = getIntent().getBooleanExtra("IS_SNOOZE", false);
@@ -80,6 +94,7 @@ public class AlarmRingingActivity extends AppCompatActivity {
 
                     startRinging(alarm.ringtoneUri);
                 } else {
+                    Log.e(TAG, "No alarm found for ID: " + alarmId);
                     finish(); // Không có alarm, thoát
                 }
             });
@@ -87,6 +102,7 @@ public class AlarmRingingActivity extends AppCompatActivity {
 
         Button snoozeButton = findViewById(R.id.snoozeButton);
         snoozeButton.setOnClickListener(v -> {
+            Log.d(TAG, "Snooze button clicked");
             stopRinging();
 
             // Tắt service
@@ -111,6 +127,7 @@ public class AlarmRingingActivity extends AppCompatActivity {
 
         Button dismissButton = findViewById(R.id.dismissButton);
         dismissButton.setOnClickListener(v -> {
+            Log.d(TAG, "Dismiss button clicked");
             stopRinging();
 
             // Tắt service
@@ -120,12 +137,66 @@ public class AlarmRingingActivity extends AppCompatActivity {
             startService(serviceIntent);
 
             for (Alarm alarm : alarms) {
-                alarm.enabled = false;
-                viewModel.update(alarm);
+                if (alarm.repeatDays == null || !hasRepeatDays(alarm.repeatDays)) {
+                    alarm.enabled = false;
+                    viewModel.update(alarm);
+                }
             }
-            NotificationUtils.cancelNotification(this, alarmId);
+//            NotificationUtils.cancelNotification(this, alarmId);
             finish();
         });
+    }
+
+    // Helper method để kiểm tra có repeat days không
+    private boolean hasRepeatDays(java.util.List<Boolean> repeatDays) {
+        if (repeatDays == null || repeatDays.size() != 7) return false;
+        for (Boolean day : repeatDays) {
+            if (day != null && day) return true;
+        }
+        return false;
+    }
+
+    private void setupWindowFlags() {
+        // Đối với Android 8.1+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+
+            KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            if (keyguardManager != null) {
+                keyguardManager.requestDismissKeyguard(this, null);
+            }
+        } else {
+            // Đối với Android cũ hơn
+            Window window = getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+
+        // Các flags bổ sung để đảm bảo activity hiển thị
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+
+        // Đặt độ sáng tối đa
+        WindowManager.LayoutParams params = window.getAttributes();
+        params.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL;
+        window.setAttributes(params);
+    }
+
+    private void acquireWakeLock() {
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(
+                    PowerManager.FULL_WAKE_LOCK |
+                            PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                            PowerManager.ON_AFTER_RELEASE,
+                    "AlarmApp:AlarmWakeLock"
+            );
+            wakeLock.acquire(10 * 60 * 1000L); // 10 minutes max
+            Log.d(TAG, "Wake lock acquired");
+        }
     }
 
     private void startRinging(String ringtoneUriStr) {
@@ -139,25 +210,31 @@ public class AlarmRingingActivity extends AppCompatActivity {
             mediaPlayer.setLooping(true);
             mediaPlayer.prepare();
             mediaPlayer.start();
+            Log.d(TAG, "Started ringing in activity");
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error starting media player", e);
         }
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        long[] pattern = {0, 1000, 1000};
-        vibrator.vibrate(pattern, 0);
+        if (vibrator != null) {
+            long[] pattern = {0, 1000, 1000};
+            vibrator.vibrate(pattern, 0);
+            Log.d(TAG, "Started vibration in activity");
+        }
     }
 
     private boolean isStopped = false;
 
     private void stopRinging() {
+        Log.d(TAG, "Stopping ringing");
+
         if (mediaPlayer != null && !isStopped) {
             try {
                 if (mediaPlayer.isPlaying()) {
                     mediaPlayer.stop();
                 }
             } catch (IllegalStateException e) {
-                e.printStackTrace(); // Log lỗi nhưng không crash
+                Log.e(TAG, "Error stopping media player", e);
             } finally {
                 try {
                     mediaPlayer.release();
@@ -178,8 +255,43 @@ public class AlarmRingingActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.d(TAG, "onNewIntent called");
+        setIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume called");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause called - but staying active");
+        // Không làm gì ở đây, để activity tiếp tục hoạt động
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "onStop called");
+    }
+
+    @Override
     protected void onDestroy() {
+        Log.d(TAG, "onDestroy called");
+
         stopRinging();
+
+        // Release wake lock
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            Log.d(TAG, "Wake lock released");
+        }
+
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
             try {

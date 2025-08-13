@@ -1,7 +1,12 @@
 package com.example.alarm.view.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +32,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AlarmFragment extends Fragment {
+    private static final String TAG = "AlarmFragment";
+
     private AlarmViewModel viewModel;
     private RecyclerView recyclerView;
     private TextView noAlarmText;
@@ -34,6 +41,32 @@ public class AlarmFragment extends Fragment {
     private CardView cardNextAlarm;
     private TextView nextAlarmTime, nextAlarmName, countdownText;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    // BroadcastReceiver để nhận thông báo khi alarm state thay đổi
+    private BroadcastReceiver alarmStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.example.alarm.ACTION_ALARM_STATE_CHANGED".equals(intent.getAction())) {
+                int alarmId = intent.getIntExtra("ALARM_ID", -1);
+                boolean enabled = intent.getBooleanExtra("ENABLED", true);
+
+                Log.d(TAG, "🔔 Received alarm state change: ID=" + alarmId + ", enabled=" + enabled);
+
+                // Cách 1: Đợi một chút rồi force update adapter
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Delay một chút để database update xong
+                        recyclerView.postDelayed(() -> {
+                            if (adapter != null) {
+                                adapter.notifyDataSetChanged();
+                                Log.d(TAG, "📱 Adapter notified to refresh");
+                            }
+                        }, 100); // Delay 100ms
+                    });
+                }
+            }
+        }
+    };
 
     @Nullable
     @Override
@@ -74,6 +107,37 @@ public class AlarmFragment extends Fragment {
         });
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Đăng ký BroadcastReceiver khi Fragment hiển thị
+        if (getContext() != null) {
+            IntentFilter filter = new IntentFilter("com.example.alarm.ACTION_ALARM_STATE_CHANGED");
+
+            // Thêm flag RECEIVER_NOT_EXPORTED cho Android 13+ (API 33+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getContext().registerReceiver(alarmStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                getContext().registerReceiver(alarmStateReceiver, filter);
+            }
+            Log.d(TAG, "📡 BroadcastReceiver registered");
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Hủy đăng ký BroadcastReceiver khi Fragment không hiển thị
+        if (getContext() != null) {
+            try {
+                getContext().unregisterReceiver(alarmStateReceiver);
+                Log.d(TAG, "📡 BroadcastReceiver unregistered");
+            } catch (Exception e) {
+                Log.w(TAG, "BroadcastReceiver was not registered");
+            }
+        }
     }
 
     private boolean hasEnabledAlarm(List<Alarm> alarms) {
