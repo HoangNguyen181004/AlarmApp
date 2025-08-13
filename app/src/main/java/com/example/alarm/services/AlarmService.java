@@ -66,6 +66,9 @@ public class AlarmService extends Service {
 
                 String timeStr = getCurrentTimeString();
 
+                // Đảm bảo channel tồn tại trước khi tạo notification
+                NotificationUtils.createNotificationChannel(this);
+
                 if (!isScreenOn) {
                     // Màn hình tắt - sử dụng notification ẩn và hiển thị Activity
                     Notification hiddenNotification = NotificationUtils.buildHiddenServiceNotification(
@@ -92,6 +95,7 @@ public class AlarmService extends Service {
 
         return START_NOT_STICKY;
     }
+
 
     private void startAlarmActivity(Intent serviceIntent) {
         Intent alarmIntent = new Intent(this, AlarmRingingActivity.class);

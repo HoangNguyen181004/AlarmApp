@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <!-- Header với nút back và tiêu đề -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurface"
+        android:elevation="2dp">
+
+        <!-- Nút back -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            android:contentDescription="Quay lại"
+            android:padding="16dp"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Tiêu đề -->
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Chọn múi giờ"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:gravity="center" />
+
+        <!-- Spacer để cân bằng với nút back -->
+        <View
+            android:layout_width="56dp"
+            android:layout_height="56dp" />
+
+    </LinearLayout>
+
+    <!-- Thanh tìm kiếm -->
+    <androidx.appcompat.widget.SearchView
+        android:id="@+id/search_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:queryHint="Tìm kiếm thành phố..."
+        app:iconifiedByDefault="false" />
+
+    <!-- RecyclerView cho danh sách các múi giờ -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_timezones"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="4dp"
+        android:paddingBottom="16dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_timezone_selector"/>
+
+</LinearLayout>

@@ -5,12 +5,16 @@ import java.util.Date;
 import java.util.Locale;
 
 public class TimeUtils {
-    public static String formatTime(int hour, int minute) {
-        return String.format(Locale.getDefault(), "%02d:%02d",hour, minute);
+    public static String formatMillisToTime(long millis) {
+        int minutes = (int) (millis / 60000);
+        int seconds = (int) ((millis / 1000) % 60);
+        int centis = (int) ((millis / 10) % 100);
+        return String.format("%02d:%02d.%02d", minutes, seconds, centis);
     }
 
-    public static String getCurrentTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        return sdf.format(new Date());
+    public static String formatMillisToMinutesSeconds(long millis) {
+        int minutes = (int) (millis / 60000);
+        int seconds = (int) ((millis / 1000) % 60);
+        return String.format("%02d:%02d", minutes, seconds);
     }
 }
