@@ -1,21 +1,17 @@
 package com.example.alarm.view.fragments;
 
 import android.app.AlertDialog;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.media.AudioAttributes;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,13 +19,8 @@ import android.widget.NumberPicker;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -42,6 +33,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 
 public class TimerFragment extends Fragment {
 
+    private static final String TAG = "TimerFragment";
     private TimerViewModel viewModel;
     private NumberPicker npHours, npMinutes, npSeconds;
     private TextView tvTimerTime, tvRemainingLabel;
@@ -50,16 +42,17 @@ public class TimerFragment extends Fragment {
     private View cardTimePicker, cardPresets, countdownContainer;
     private Ringtone ringtone;
     private Handler ringtoneHandler;
-    private static final int NOTIFICATION_ID = 1;
-    private static final String CHANNEL_ID = "TimerChannel";
-    private ActivityResultLauncher<String> requestPermissionLauncher;
 
     // BroadcastReceiver để nhận thông báo từ TimerService
-    private BroadcastReceiver timerFinishedReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver timerReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (TimerService.TIMER_FINISHED_ACTION.equals(intent.getAction())) {
-                // Timer đã kết thúc từ service
+            if (TimerService.TIMER_TICK_ACTION.equals(intent.getAction())) {
+                long remainingMillis = intent.getLongExtra(TimerService.EXTRA_REMAINING_MILLIS, 0);
+                viewModel.updateRemainingMillis(remainingMillis);
+                Log.d(TAG, "Received tick broadcast: " + remainingMillis + " ms remaining");
+            } else if (TimerService.TIMER_FINISHED_ACTION.equals(intent.getAction())) {
+                Log.d(TAG, "Received finished broadcast");
                 viewModel.onTimerFinished();
                 showTimerFinishedDialog();
             }
@@ -69,9 +62,10 @@ public class TimerFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView called");
         View view = inflater.inflate(R.layout.fragment_timer, container, false);
 
-        // thiết lập các view từ layout
+        // Thiết lập các view từ layout
         npHours = view.findViewById(R.id.np_hours);
         npMinutes = view.findViewById(R.id.np_minutes);
         npSeconds = view.findViewById(R.id.np_seconds);
@@ -84,7 +78,7 @@ public class TimerFragment extends Fragment {
         cardPresets = view.findViewById(R.id.card_presets);
         countdownContainer = view.findViewById(R.id.countdown_container);
 
-        // number pickers
+        // Number pickers
         npHours.setMinValue(0);
         npHours.setMaxValue(23);
         npMinutes.setMinValue(0);
@@ -92,29 +86,14 @@ public class TimerFragment extends Fragment {
         npSeconds.setMinValue(0);
         npSeconds.setMaxValue(59);
 
-        // mấy cái nút chọn sẵn thời gian đếm ngược
+        // Thiết lập các chip chọn sẵn thời gian đếm ngược
         setupPresetChips(view);
 
-        // ringtone - đổi thành notification sound
+        // Ringtone
         Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         ringtone = RingtoneManager.getRingtone(getContext(), ringtoneUri);
         ringtoneHandler = new Handler(Looper.getMainLooper());
-
-        // notification
-        createNotificationChannel();
-
-        // request quyền
-        requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-            if (isGranted && Boolean.TRUE.equals(viewModel.getIsRunning().getValue())) {
-                showNotification();
-            }
-        });
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
-            }
-        }
+        Log.d(TAG, "Ringtone initialized with URI: " + ringtoneUri);
 
         return view;
     }
@@ -122,41 +101,42 @@ public class TimerFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        Log.d(TAG, "onViewCreated called");
 
         viewModel = new ViewModelProvider(requireActivity()).get(TimerViewModel.class);
 
         viewModel.getRemainingMillis().observe(getViewLifecycleOwner(), this::updateTimeDisplay);
         viewModel.getIsRunning().observe(getViewLifecycleOwner(), this::updateButtonStates);
         viewModel.getTotalMillis().observe(getViewLifecycleOwner(), total -> {
-            if (total > 0) {
+            if (total != null && total > 0) {
                 updateUIForCountdown();
-                showNotification();
+                Log.d(TAG, "UI updated for countdown with total: " + total + " ms");
             } else {
                 updateUIForSetup();
-                cancelNotification();
+                Log.d(TAG, "UI updated for setup");
             }
         });
         viewModel.getIsFinished().observe(getViewLifecycleOwner(), isFinished -> {
             if (isFinished) {
                 playRingtone();
-                // Không cần showTimerFinishedDialog() ở đây vì service sẽ gọi
+                Log.d(TAG, "Timer finished, playing ringtone");
             }
         });
 
-        // nút bấm
+        // Nút bấm
         btnStartPause.setOnClickListener(v -> {
             if (viewModel.getIsRunning().getValue() != null && viewModel.getIsRunning().getValue()) {
                 // Tạm dừng
                 viewModel.pause();
                 stopTimerService();
-                cancelNotification();
+                Log.d(TAG, "Timer paused");
             } else if (viewModel.getTotalMillis().getValue() != null && viewModel.getTotalMillis().getValue() > 0) {
                 // Tiếp tục
                 Long remaining = viewModel.getRemainingMillis().getValue();
                 if (remaining != null && remaining > 0) {
                     viewModel.resume();
                     startTimerService(remaining);
-                    showNotification();
+                    Log.d(TAG, "Timer resumed with " + remaining + " ms");
                 }
             } else {
                 // Bắt đầu mới
@@ -164,7 +144,7 @@ public class TimerFragment extends Fragment {
                 if (millis > 0) {
                     viewModel.start(millis);
                     startTimerService(millis);
-                    showNotification();
+                    Log.d(TAG, "Timer started with " + millis + " ms");
                 }
             }
         });
@@ -172,11 +152,11 @@ public class TimerFragment extends Fragment {
         btnReset.setOnClickListener(v -> {
             viewModel.reset();
             stopTimerService();
-            cancelNotification();
             stopRingtone();
+            Log.d(TAG, "Timer reset");
         });
 
-        // cập nhật giao diện ban đầu
+        // Cập nhật giao diện ban đầu
         updateButtonStates(viewModel.getIsRunning().getValue());
         updateTimeDisplay(viewModel.getRemainingMillis().getValue());
         if (viewModel.getTotalMillis().getValue() != null && viewModel.getTotalMillis().getValue() > 0) {
@@ -190,14 +170,15 @@ public class TimerFragment extends Fragment {
     public void onResume() {
         super.onResume();
         // Đăng ký receiver để nhận thông báo từ service
-        IntentFilter filter = new IntentFilter(TimerService.TIMER_FINISHED_ACTION);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TimerService.TIMER_TICK_ACTION);
+        filter.addAction(TimerService.TIMER_FINISHED_ACTION);
         requireContext().registerReceiver(
-                timerFinishedReceiver,
+                timerReceiver,
                 filter,
                 Context.RECEIVER_NOT_EXPORTED
         );
-
-
+        Log.d(TAG, "BroadcastReceiver registered");
     }
 
     @Override
@@ -205,9 +186,10 @@ public class TimerFragment extends Fragment {
         super.onPause();
         // Hủy đăng ký receiver
         try {
-            requireContext().unregisterReceiver(timerFinishedReceiver);
+            requireContext().unregisterReceiver(timerReceiver);
+            Log.d(TAG, "BroadcastReceiver unregistered");
         } catch (Exception e) {
-            // Ignore if not registered
+            Log.e(TAG, "Error unregistering receiver", e);
         }
     }
 
@@ -216,16 +198,18 @@ public class TimerFragment extends Fragment {
         Intent serviceIntent = new Intent(getContext(), TimerService.class);
         serviceIntent.setAction(TimerService.ACTION_START_TIMER);
         serviceIntent.putExtra(TimerService.EXTRA_DELAY_MILLIS, delayMillis);
-        requireContext().startService(serviceIntent);
+        requireContext().startForegroundService(serviceIntent);
+        Log.d(TAG, "Started TimerService with " + delayMillis + " ms");
     }
 
     // Dừng timer service
     private void stopTimerService() {
         Intent serviceIntent = new Intent(getContext(), TimerService.class);
         requireContext().stopService(serviceIntent);
+        Log.d(TAG, "Stopped TimerService");
     }
 
-    // cái này là để thiết lập các chip chọn sẵn thời gian
+    // Thiết lập các chip chọn sẵn thời gian
     private void setupPresetChips(View view) {
         Chip chip1min = view.findViewById(R.id.chip_1min);
         Chip chip3min = view.findViewById(R.id.chip_3min);
@@ -240,27 +224,32 @@ public class TimerFragment extends Fragment {
         chip10min.setOnClickListener(v -> setPickerValues(0, 10, 0));
         chip15min.setOnClickListener(v -> setPickerValues(0, 15, 0));
         chip20min.setOnClickListener(v -> setPickerValues(0, 20, 0));
+        Log.d(TAG, "Preset chips initialized");
     }
 
-    // cái này là để thiết lập giá trị cho các picker
+    // Thiết lập giá trị cho các picker
     private void setPickerValues(int hours, int minutes, int seconds) {
         npHours.setValue(hours);
         npMinutes.setValue(minutes);
         npSeconds.setValue(seconds);
+        Log.d(TAG, "Picker values set to " + hours + "h " + minutes + "m " + seconds + "s");
     }
 
-    // cái này là để lấy thời gian đã chọn từ các picker (chuyển đổi sang ms)
+    // Lấy thời gian đã chọn từ các picker (chuyển đổi sang ms)
     private long getSelectedMillis() {
         int hours = npHours.getValue();
         int minutes = npMinutes.getValue();
         int seconds = npSeconds.getValue();
-        return (hours * 3600L + minutes * 60L + seconds) * 1000L;
+        long millis = (hours * 3600L + minutes * 60L + seconds) * 1000L;
+        Log.d(TAG, "Selected time: " + millis + " ms");
+        return millis;
     }
 
     private void updateTimeDisplay(Long millis) {
         if (millis == null || millis <= 0) {
             tvTimerTime.setText("00:00");
             circularProgress.setProgress(100);
+            Log.d(TAG, "Time display updated to 00:00");
             return;
         }
         String formatted = TimeUtils.formatMillisToMinutesSeconds(millis);
@@ -270,6 +259,7 @@ public class TimerFragment extends Fragment {
         long total = viewModel.getTotalMillis().getValue() != null ? viewModel.getTotalMillis().getValue() : 1L;
         int progress = (int) (((double) millis / total) * 100);
         circularProgress.setProgress(100 - progress);
+        Log.d(TAG, "Time display updated to " + formatted + ", progress: " + progress);
     }
 
     private void updateButtonStates(Boolean isRunning) {
@@ -279,23 +269,26 @@ public class TimerFragment extends Fragment {
             if (isRunning) {
                 btnStartPause.setIconResource(R.drawable.ic_pause);
                 btnStartPause.setContentDescription("Pause Timer");
+                Log.d(TAG, "Button state: Pause");
             } else {
                 btnStartPause.setIconResource(R.drawable.ic_start);
                 btnStartPause.setContentDescription("Resume Timer");
+                Log.d(TAG, "Button state: Resume");
             }
         } else {
             btnReset.setVisibility(View.GONE);
             btnStartPause.setIconResource(R.drawable.ic_start);
             btnStartPause.setContentDescription("Start Timer");
+            Log.d(TAG, "Button state: Start");
         }
     }
 
-    // cập nhật giao diện khi đang đếm ngược hoặc thiết lập
     private void updateUIForCountdown() {
         cardTimePicker.setVisibility(View.GONE);
         cardPresets.setVisibility(View.GONE);
         countdownContainer.setVisibility(View.VISIBLE);
         tvRemainingLabel.setVisibility(View.VISIBLE);
+        Log.d(TAG, "UI switched to countdown mode");
     }
 
     private void updateUIForSetup() {
@@ -304,13 +297,14 @@ public class TimerFragment extends Fragment {
         countdownContainer.setVisibility(View.GONE);
         tvRemainingLabel.setVisibility(View.GONE);
         setPickerValues(0, 0, 0);
+        Log.d(TAG, "UI switched to setup mode");
     }
 
     private void playRingtone() {
         if (ringtone != null && !ringtone.isPlaying()) {
             ringtone.play();
-            // Giảm thời gian từ 60s xuống 3s cho notification sound
             ringtoneHandler.postDelayed(() -> stopRingtone(), 3_000);
+            Log.d(TAG, "Playing ringtone for 3 seconds");
         }
     }
 
@@ -319,6 +313,7 @@ public class TimerFragment extends Fragment {
             ringtone.stop();
         }
         ringtoneHandler.removeCallbacksAndMessages(null);
+        Log.d(TAG, "Ringtone stopped");
     }
 
     private void showTimerFinishedDialog() {
@@ -336,65 +331,26 @@ public class TimerFragment extends Fragment {
                     viewModel.reset();
                     setPickerValues(hours, minutes, seconds);
                     updateUIForSetup();
+                    Log.d(TAG, "Timer reset from dialog");
                 })
                 .setNegativeButton("Hủy", (dialog, which) -> {
                     stopRingtone();
                     dialog.dismiss();
+                    Log.d(TAG, "Dialog dismissed");
                 })
                 .setCancelable(false)
                 .show();
-    }
-
-    // tạo notification channel
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Timer Notification";
-            String description = "Channel for timer notifications";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .build();
-            channel.setSound(null, audioAttributes);
-            NotificationManager notificationManager = requireContext().getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    // Hiện notification khi timer đang chạy
-    private void showNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(requireContext(), CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_timer)
-                .setContentTitle("Bộ đếm ngược")
-                .setContentText("Bộ đếm ngược của bạn đang chạy")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setOngoing(true)
-                .setAutoCancel(false);
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
-    }
-
-    private void cancelNotification() {
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
-        notificationManager.cancel(NOTIFICATION_ID);
+        Log.d(TAG, "Showing timer finished dialog");
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Chỉ dừng service nếu timer đã reset, không phải khi thoát app
+        // Chỉ dừng service nếu timer đã reset
         if (viewModel.getTotalMillis().getValue() == null || viewModel.getTotalMillis().getValue() == 0) {
             stopTimerService();
         }
         stopRingtone();
-        cancelNotification();
+        Log.d(TAG, "onDestroyView called");
     }
 }

@@ -77,6 +77,10 @@ public class TimerViewModel extends ViewModel {
         remainingMillis.setValue(0L);
     }
 
+    public void updateRemainingMillis(long millis) {
+        remainingMillis.postValue(millis);
+    }
+
     private void createTimer(long millis) {
         countDownTimer = new CountDownTimer(millis, 1000) {
             @Override
